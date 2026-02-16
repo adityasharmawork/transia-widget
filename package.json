@@ -1,0 +1,58 @@
+{
+  "name": "@transia/widget",
+  "version": "0.1.0",
+  "description": "Floating language switcher widget for Transia-powered multilingual websites",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./next-intl": {
+      "import": "./dist/frameworks/next-intl.js",
+      "types": "./dist/frameworks/next-intl.d.ts"
+    },
+    "./i18next": {
+      "import": "./dist/frameworks/i18next.js",
+      "types": "./dist/frameworks/i18next.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": false
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "transia",
+    "i18n",
+    "translation",
+    "language-switcher",
+    "widget",
+    "react",
+    "next-intl",
+    "i18next"
+  ],
+  "license": "MIT"
+}
