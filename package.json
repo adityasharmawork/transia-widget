@@ -1,5 +1,5 @@
 {
-  "name": "@transia/widget",
+  "name": "transia-widget",
   "version": "0.1.0",
   "description": "Floating language switcher widget for Transia-powered multilingual websites",
   "type": "module",
@@ -22,10 +22,13 @@
   "files": [
     "dist"
   ],
+  "author": "Transia",
+  "homepage": "https://transia.dev/docs#widget",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
