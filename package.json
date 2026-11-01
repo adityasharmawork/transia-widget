@@ -3,20 +3,28 @@
   "version": "0.1.0",
   "description": "Floating language switcher widget for Transia-powered multilingual websites",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "sideEffects": false,
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
     },
     "./next-intl": {
+      "types": "./dist/frameworks/next-intl.d.ts",
       "import": "./dist/frameworks/next-intl.js",
-      "types": "./dist/frameworks/next-intl.d.ts"
+      "require": "./dist/frameworks/next-intl.cjs",
+      "default": "./dist/frameworks/next-intl.js"
     },
     "./i18next": {
+      "types": "./dist/frameworks/i18next.d.ts",
       "import": "./dist/frameworks/i18next.js",
-      "types": "./dist/frameworks/i18next.d.ts"
+      "require": "./dist/frameworks/i18next.cjs",
+      "default": "./dist/frameworks/i18next.js"
     }
   },
   "files": [
