@@ -7,6 +7,9 @@ interface FloatingButtonProps {
   onClick: () => void;
   position: "bottom-right" | "bottom-left" | "top-right" | "top-left";
   theme: "light" | "dark";
+  /** id of the listbox this button controls (aria-controls) */
+  controlsId: string;
+  buttonRef?: React.Ref<HTMLButtonElement>;
 }
 
 const positionStyles: Record<string, React.CSSProperties> = {
@@ -22,9 +25,11 @@ export function FloatingButton({
   onClick,
   position,
   theme,
+  controlsId,
+  buttonRef,
 }: FloatingButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const { flag } = getLocaleInfo(currentLocale);
+  const { flag, name } = getLocaleInfo(currentLocale);
   const isDark = theme === "dark";
 
   const transform = isHovered ? "scale(1.05)" : isOpen ? "scale(0.95)" : "scale(1)";
@@ -34,9 +39,13 @@ export function FloatingButton({
 
   return (
     <button
+      type="button"
+      ref={buttonRef}
       onClick={onClick}
-      aria-label="Switch language"
+      aria-label={`Switch language (current: ${name})`}
+      aria-haspopup="listbox"
       aria-expanded={isOpen}
+      aria-controls={isOpen ? controlsId : undefined}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
@@ -58,7 +67,7 @@ export function FloatingButton({
         transform,
       }}
     >
-      {flag}
+      <span aria-hidden="true">{flag}</span>
     </button>
   );
 }

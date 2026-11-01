@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo, useId } from "react";
 import { FloatingButton } from "./components/FloatingButton.js";
 import { LanguagePanel } from "./components/LanguagePanel.js";
 import { trackEvent } from "./analytics.js";
@@ -57,6 +57,8 @@ export function TransiaWidget({
     () => resolveActiveLocale(locales, currentLocale) ?? "en",
   );
   const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listboxId = useId();
   const resolvedTheme = useResolvedTheme(theme);
 
   // Sync external locale changes — resolve against the known list so a regional
@@ -78,7 +80,8 @@ export function TransiaWidget({
   useEffect(() => {
     if (!isOpen) return;
 
-    function handleClick(e: MouseEvent) {
+    // pointerdown covers mouse + touch (mousedown missed touch taps).
+    function handleClick(e: Event) {
       if (
         panelRef.current &&
         !panelRef.current.contains(e.target as Node)
@@ -87,15 +90,18 @@ export function TransiaWidget({
       }
     }
 
-    // Close on Escape
+    // Close on Escape and return focus to the trigger (WAI-ARIA listbox pattern).
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Escape") {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
     }
 
-    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("pointerdown", handleClick);
     document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("pointerdown", handleClick);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
@@ -104,6 +110,7 @@ export function TransiaWidget({
     (locale: string) => {
       setActiveLocale(locale);
       setIsOpen(false);
+      triggerRef.current?.focus(); // return focus to the trigger after choosing
       onLocaleChange(locale);
 
       if (projectId) {
@@ -123,6 +130,8 @@ export function TransiaWidget({
         onClick={() => setIsOpen(!isOpen)}
         position={position}
         theme={resolvedTheme}
+        controlsId={listboxId}
+        buttonRef={triggerRef}
       />
 
       {isOpen && (
@@ -134,6 +143,7 @@ export function TransiaWidget({
           theme={resolvedTheme}
           showFlags={showFlags}
           showBranding={showBranding}
+          listboxId={listboxId}
         />
       )}
     </div>

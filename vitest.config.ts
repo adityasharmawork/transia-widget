@@ -19,7 +19,6 @@ const jsToTs = {
 
 export default defineConfig({
   plugins: [jsToTs],
-  esbuild: { jsx: "automatic" },
   test: {
     environment: "jsdom",
     globals: true,

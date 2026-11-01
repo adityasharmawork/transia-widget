@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import { getLocaleInfo } from "../flags.js";
 
 interface LanguagePanelProps {
@@ -9,38 +9,44 @@ interface LanguagePanelProps {
   theme: "light" | "dark";
   showFlags: boolean;
   showBranding: boolean;
+  /** id referenced by the trigger's aria-controls */
+  listboxId: string;
 }
 
 function LanguageOption({
   locale,
   isActive,
+  isFocused,
   isDark,
   showFlags,
   onSelect,
+  optionRef,
 }: {
   locale: string;
   isActive: boolean;
+  isFocused: boolean;
   isDark: boolean;
   showFlags: boolean;
   onSelect: (locale: string) => void;
+  optionRef: (el: HTMLButtonElement | null) => void;
 }) {
-  const [isHovered, setIsHovered] = useState(false);
   const { flag, name } = getLocaleInfo(locale);
 
-  let bgColor = "transparent";
-  if (isActive) {
-    bgColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
-  } else if (isHovered) {
-    bgColor = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)";
-  }
+  const bgColor = isActive
+    ? isDark
+      ? "rgba(255,255,255,0.10)"
+      : "rgba(0,0,0,0.06)"
+    : "transparent";
 
   return (
     <button
+      type="button"
       role="option"
       aria-selected={isActive}
+      // Roving tabindex: only the focused option is in the Tab order.
+      tabIndex={isFocused ? 0 : -1}
+      ref={optionRef}
       onClick={() => onSelect(locale)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       style={{
         display: "flex",
         alignItems: "center",
@@ -52,27 +58,22 @@ function LanguageOption({
         cursor: "pointer",
         fontSize: 14,
         color: isDark ? "#e5e5e5" : "#171717",
-        textAlign: "left",
+        textAlign: "start",
         transition: "background-color 0.15s ease",
       }}
     >
       {showFlags && (
-        <span style={{ fontSize: 18 }}>{flag}</span>
+        <span aria-hidden="true" style={{ fontSize: 18 }}>
+          {flag}
+        </span>
       )}
-      <span
-        style={{
-          flex: 1,
-          fontWeight: isActive ? 600 : 400,
-        }}
-      >
+      <span lang={locale} style={{ flex: 1, fontWeight: isActive ? 600 : 400 }}>
         {name}
       </span>
       {isActive && (
         <span
-          style={{
-            fontSize: 12,
-            color: isDark ? "#737373" : "#a3a3a3",
-          }}
+          aria-hidden="true"
+          style={{ fontSize: 12, color: isDark ? "#d4d4d4" : "#404040" }}
         >
           &#10003;
         </span>
@@ -89,10 +90,47 @@ export function LanguagePanel({
   theme,
   showFlags,
   showBranding,
+  listboxId,
 }: LanguagePanelProps) {
   const isDark = theme === "dark";
   const isTop = position.startsWith("top");
   const isLeft = position.endsWith("left");
+
+  const optionEls = useRef<Array<HTMLButtonElement | null>>([]);
+  const activeIndex = Math.max(0, locales.indexOf(currentLocale));
+  const [focusIndex, setFocusIndex] = React.useState(activeIndex);
+
+  // Move DOM focus to the virtually-focused option (on open and on arrow nav).
+  useEffect(() => {
+    optionEls.current[focusIndex]?.focus();
+  }, [focusIndex]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const n = locales.length;
+      if (n === 0) return;
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          setFocusIndex((i) => (i + 1) % n);
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setFocusIndex((i) => (i - 1 + n) % n);
+          break;
+        case "Home":
+          e.preventDefault();
+          setFocusIndex(0);
+          break;
+        case "End":
+          e.preventDefault();
+          setFocusIndex(n - 1);
+          break;
+        // Enter/Space are handled natively by the focused <button> (onClick).
+      }
+    },
+    [locales.length],
+  );
 
   const panelPosition: React.CSSProperties = {
     position: "fixed",
@@ -101,28 +139,8 @@ export function LanguagePanel({
     ...(isLeft ? { left: 20 } : { right: 20 }),
   };
 
-  // L1: Keyboard navigation
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      const currentIndex = locales.indexOf(currentLocale);
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        const next = locales[(currentIndex + 1) % locales.length];
-        onSelect(next);
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        const prev = locales[(currentIndex - 1 + locales.length) % locales.length];
-        onSelect(prev);
-      }
-    },
-    [locales, currentLocale, onSelect],
-  );
-
   return (
     <div
-      role="listbox"
-      aria-label="Select language"
-      onKeyDown={handleKeyDown}
       style={{
         ...panelPosition,
         width: 200,
@@ -135,21 +153,30 @@ export function LanguagePanel({
           '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
+      {/* Only options live inside role="listbox" (branding is a sibling). */}
       <div
+        id={listboxId}
+        role="listbox"
+        aria-label="Select language"
+        onKeyDown={handleKeyDown}
         style={{
-          maxHeight: 280,
+          maxHeight: "min(280px, calc(100vh - 120px))",
           overflowY: "auto",
           padding: "4px 0",
         }}
       >
-        {locales.map((locale) => (
+        {locales.map((locale, i) => (
           <LanguageOption
             key={locale}
             locale={locale}
             isActive={locale === currentLocale}
+            isFocused={i === focusIndex}
             isDark={isDark}
             showFlags={showFlags}
             onSelect={onSelect}
+            optionRef={(el) => {
+              optionEls.current[i] = el;
+            }}
           />
         ))}
       </div>
@@ -168,7 +195,7 @@ export function LanguagePanel({
             rel="noopener noreferrer"
             style={{
               fontSize: 11,
-              color: isDark ? "#525252" : "#a3a3a3",
+              color: isDark ? "#b5b5b5" : "#525252",
               textDecoration: "none",
               fontFamily: "monospace",
             }}
