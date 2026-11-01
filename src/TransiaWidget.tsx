@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { FloatingButton } from "./components/FloatingButton.js";
 import { LanguagePanel } from "./components/LanguagePanel.js";
 import { trackEvent } from "./analytics.js";
+import { sanitizeLocales, resolveActiveLocale } from "./locale.js";
 
 export interface TransiaWidgetProps {
   locales: string[];
@@ -35,8 +36,6 @@ function useResolvedTheme(theme: "auto" | "light" | "dark"): "light" | "dark" {
   return resolved;
 }
 
-const LOCALE_RE = /^[a-z]{2}(-[A-Z]{2})?$/;
-
 export function TransiaWidget({
   locales: rawLocales,
   currentLocale,
@@ -47,26 +46,26 @@ export function TransiaWidget({
   showBranding = true,
   projectId,
 }: TransiaWidgetProps) {
-  // M4: Filter to valid locale entries
-  const locales = rawLocales.filter(
-    (l) => typeof l === "string" && LOCALE_RE.test(l)
+  // Keep only valid, de-duplicated BCP-47 tags (memoized so it's a stable dep).
+  const locales = useMemo(
+    () => sanitizeLocales(rawLocales),
+    [rawLocales.join("\u0000")],
   );
 
   const [isOpen, setIsOpen] = useState(false);
-  const [activeLocale, setActiveLocale] = useState(() => {
-    // M4: Ensure currentLocale is in the array
-    if (currentLocale && locales.includes(currentLocale)) return currentLocale;
-    return locales[0] ?? "en";
-  });
+  const [activeLocale, setActiveLocale] = useState(
+    () => resolveActiveLocale(locales, currentLocale) ?? "en",
+  );
   const panelRef = useRef<HTMLDivElement>(null);
   const resolvedTheme = useResolvedTheme(theme);
 
-  // Sync external locale changes
+  // Sync external locale changes — resolve against the known list so a regional
+  // variant (e.g. "en-US" when the list has "en") or an unknown tag never
+  // selects a nonexistent option.
   useEffect(() => {
-    if (currentLocale) {
-      setActiveLocale(currentLocale);
-    }
-  }, [currentLocale]);
+    const next = resolveActiveLocale(locales, currentLocale);
+    if (next) setActiveLocale(next);
+  }, [currentLocale, locales]);
 
   // Track widget load
   useEffect(() => {
