@@ -16,7 +16,10 @@ export interface TransiaWidgetProps {
 }
 
 function useResolvedTheme(theme: "auto" | "light" | "dark"): "light" | "dark" {
-  const [resolved, setResolved] = useState<"light" | "dark">("light");
+  // Seed from an explicit theme so theme="dark" doesn't flash light first.
+  const [resolved, setResolved] = useState<"light" | "dark">(
+    theme === "dark" ? "dark" : "light",
+  );
 
   useEffect(() => {
     if (theme !== "auto") {

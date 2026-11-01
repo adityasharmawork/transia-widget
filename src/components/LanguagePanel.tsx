@@ -30,7 +30,7 @@ function LanguageOption({
   onSelect: (locale: string) => void;
   optionRef: (el: HTMLButtonElement | null) => void;
 }) {
-  const { flag, name } = getLocaleInfo(locale);
+  const { flag, nativeName } = getLocaleInfo(locale);
 
   const bgColor = isActive
     ? isDark
@@ -68,7 +68,7 @@ function LanguageOption({
         </span>
       )}
       <span lang={locale} style={{ flex: 1, fontWeight: isActive ? 600 : 400 }}>
-        {name}
+        {nativeName}
       </span>
       {isActive && (
         <span
