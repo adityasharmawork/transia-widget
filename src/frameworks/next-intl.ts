@@ -1,21 +1,24 @@
 // next-intl integration helper
 //
-// Usage in a Next.js app with next-intl:
+// Usage in a Next.js (App Router) client component:
 //
-// import { TransiaWidget } from "@transia/widget";
-// import { useTransiaNextIntl } from "@transia/widget/next-intl";
+// "use client";
+// import { TransiaWidget } from "transia-widget";
+// import { createNextIntlProps } from "transia-widget/next-intl";
+// import { useLocale } from "next-intl";
+// import { useRouter, usePathname } from "@/i18n/routing";
 //
-// function Layout({ children }) {
-//   const widgetProps = useTransiaNextIntl({
+// function LanguageSwitcher() {
+//   const locale = useLocale();
+//   const router = useRouter();
+//   const pathname = usePathname();
+//   const widgetProps = createNextIntlProps({
 //     locales: ["en", "es", "fr"],
-//     projectId: "trn_proj_xxx",
+//     currentLocale: locale,
+//     onLocaleChange: (next) => router.replace(pathname, { locale: next }),
+//     projectId: "trn_pub_xxxxxxxx", // the project's public key
 //   });
-//   return (
-//     <>
-//       {children}
-//       <TransiaWidget {...widgetProps} />
-//     </>
-//   );
+//   return <TransiaWidget {...widgetProps} />;
 // }
 
 import type { TransiaWidgetProps } from "../TransiaWidget.js";

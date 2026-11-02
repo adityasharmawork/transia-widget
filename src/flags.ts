@@ -37,6 +37,27 @@ const LOCALE_FLAGS: Record<string, { flag: string; name: string }> = {
   "fr-CA": { flag: "\u{1F1E8}\u{1F1E6}", name: "French (Canada)" },
 };
 
-export function getLocaleInfo(locale: string): { flag: string; name: string } {
-  return LOCALE_FLAGS[locale] ?? { flag: "\u{1F310}", name: locale };
+export interface LocaleInfo {
+  flag: string;
+  /** English display name (stable, used for the trigger's aria-label). */
+  name: string;
+  /** Endonym — the language's name in its own language (e.g. "Español", "日本語"). */
+  nativeName: string;
+}
+
+export function getLocaleInfo(locale: string): LocaleInfo {
+  const entry = LOCALE_FLAGS[locale];
+  const flag = entry?.flag ?? "\u{1F310}";
+  const name = entry?.name ?? locale;
+  let nativeName = name;
+  try {
+    const base = locale.split("-")[0];
+    const got = new Intl.DisplayNames([locale], { type: "language" }).of(base);
+    if (got && got !== base) {
+      nativeName = got.charAt(0).toUpperCase() + got.slice(1);
+    }
+  } catch {
+    // Intl.DisplayNames unavailable — fall back to the English name.
+  }
+  return { flag, name, nativeName };
 }

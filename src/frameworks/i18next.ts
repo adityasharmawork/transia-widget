@@ -2,13 +2,17 @@
 //
 // Usage in an app with react-i18next:
 //
-// import { TransiaWidget } from "@transia/widget";
-// import { useTransiaI18next } from "@transia/widget/i18next";
+// import { TransiaWidget } from "transia-widget";
+// import { createI18nextProps } from "transia-widget/i18next";
+// import { useTranslation } from "react-i18next";
 //
-// function App() {
-//   const widgetProps = useTransiaI18next({
+// function LanguageSwitcher() {
+//   const { i18n } = useTranslation();
+//   const widgetProps = createI18nextProps({
 //     locales: ["en", "es", "fr"],
-//     projectId: "trn_proj_xxx",
+//     currentLanguage: i18n.language,
+//     changeLanguage: (lng) => i18n.changeLanguage(lng),
+//     projectId: "trn_pub_xxxxxxxx", // the project's public key
 //   });
 //   return <TransiaWidget {...widgetProps} />;
 // }

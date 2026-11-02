@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo, useId } from "react";
 import { FloatingButton } from "./components/FloatingButton.js";
 import { LanguagePanel } from "./components/LanguagePanel.js";
 import { trackEvent } from "./analytics.js";
+import { sanitizeLocales, resolveActiveLocale } from "./locale.js";
 
 export interface TransiaWidgetProps {
   locales: string[];
@@ -15,7 +16,10 @@ export interface TransiaWidgetProps {
 }
 
 function useResolvedTheme(theme: "auto" | "light" | "dark"): "light" | "dark" {
-  const [resolved, setResolved] = useState<"light" | "dark">("light");
+  // Seed from an explicit theme so theme="dark" doesn't flash light first.
+  const [resolved, setResolved] = useState<"light" | "dark">(
+    theme === "dark" ? "dark" : "light",
+  );
 
   useEffect(() => {
     if (theme !== "auto") {
@@ -35,8 +39,6 @@ function useResolvedTheme(theme: "auto" | "light" | "dark"): "light" | "dark" {
   return resolved;
 }
 
-const LOCALE_RE = /^[a-z]{2}(-[A-Z]{2})?$/;
-
 export function TransiaWidget({
   locales: rawLocales,
   currentLocale,
@@ -47,26 +49,28 @@ export function TransiaWidget({
   showBranding = true,
   projectId,
 }: TransiaWidgetProps) {
-  // M4: Filter to valid locale entries
-  const locales = rawLocales.filter(
-    (l) => typeof l === "string" && LOCALE_RE.test(l)
+  // Keep only valid, de-duplicated BCP-47 tags (memoized so it's a stable dep).
+  const locales = useMemo(
+    () => sanitizeLocales(rawLocales),
+    [rawLocales.join("\u0000")],
   );
 
   const [isOpen, setIsOpen] = useState(false);
-  const [activeLocale, setActiveLocale] = useState(() => {
-    // M4: Ensure currentLocale is in the array
-    if (currentLocale && locales.includes(currentLocale)) return currentLocale;
-    return locales[0] ?? "en";
-  });
+  const [activeLocale, setActiveLocale] = useState(
+    () => resolveActiveLocale(locales, currentLocale) ?? "en",
+  );
   const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listboxId = useId();
   const resolvedTheme = useResolvedTheme(theme);
 
-  // Sync external locale changes
+  // Sync external locale changes — resolve against the known list so a regional
+  // variant (e.g. "en-US" when the list has "en") or an unknown tag never
+  // selects a nonexistent option.
   useEffect(() => {
-    if (currentLocale) {
-      setActiveLocale(currentLocale);
-    }
-  }, [currentLocale]);
+    const next = resolveActiveLocale(locales, currentLocale);
+    if (next) setActiveLocale(next);
+  }, [currentLocale, locales]);
 
   // Track widget load
   useEffect(() => {
@@ -79,7 +83,8 @@ export function TransiaWidget({
   useEffect(() => {
     if (!isOpen) return;
 
-    function handleClick(e: MouseEvent) {
+    // pointerdown covers mouse + touch (mousedown missed touch taps).
+    function handleClick(e: Event) {
       if (
         panelRef.current &&
         !panelRef.current.contains(e.target as Node)
@@ -88,15 +93,18 @@ export function TransiaWidget({
       }
     }
 
-    // Close on Escape
+    // Close on Escape and return focus to the trigger (WAI-ARIA listbox pattern).
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Escape") {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
     }
 
-    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("pointerdown", handleClick);
     document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("pointerdown", handleClick);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
@@ -105,6 +113,7 @@ export function TransiaWidget({
     (locale: string) => {
       setActiveLocale(locale);
       setIsOpen(false);
+      triggerRef.current?.focus(); // return focus to the trigger after choosing
       onLocaleChange(locale);
 
       if (projectId) {
@@ -124,6 +133,8 @@ export function TransiaWidget({
         onClick={() => setIsOpen(!isOpen)}
         position={position}
         theme={resolvedTheme}
+        controlsId={listboxId}
+        buttonRef={triggerRef}
       />
 
       {isOpen && (
@@ -135,6 +146,7 @@ export function TransiaWidget({
           theme={resolvedTheme}
           showFlags={showFlags}
           showBranding={showBranding}
+          listboxId={listboxId}
         />
       )}
     </div>
