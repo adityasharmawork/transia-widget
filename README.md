@@ -60,6 +60,26 @@ import { createI18nextProps } from "transia-widget/i18next";
 | `showBranding` | `boolean` | `true` | Show Powered by Transia footer |
 | `projectId` | `string?` | - | Public key for analytics |
 
+## Right-to-left (RTL)
+
+The widget mirrors itself automatically when the **active** locale is written
+right-to-left (Arabic, Hebrew, Persian/Farsi, Urdu, …): the trigger, panel and
+option rows flip, and text aligns to the correct edge. The language list always
+renders each option's name in **its own** language's direction, so a mixed-script
+list (e.g. `English`, `العربية`, `עברית`) reads correctly regardless of the active
+locale. No configuration is required.
+
+The direction helper is also exported, in case you want to align your own chrome
+to match:
+
+```tsx
+import { localeDirection } from "transia-widget";
+
+localeDirection("ar"); // "rtl"
+localeDirection("en"); // "ltr"
+localeDirection("az-Arab"); // "rtl" (script-aware)
+```
+
 ## Requirements
 
 - React 18+
