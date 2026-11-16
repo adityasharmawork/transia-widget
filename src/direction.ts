@@ -55,6 +55,27 @@ const RTL_SCRIPTS = new Set([
   "yezi",
 ]);
 
+/**
+ * Static fallback used when the Intl Locale-Info API is unavailable. Exported so
+ * it can be unit-tested directly — on a runtime that has `Intl.Locale.textInfo`
+ * (modern Node/browsers) `localeDirection` never reaches this path, so testing it
+ * through `localeDirection` alone would leave it uncovered.
+ *
+ * An explicit **script** subtag is authoritative (an RTL script → rtl, any other
+ * script → ltr), so a base-RTL language romanized or written in a non-RTL script
+ * (e.g. `ur-Latn`, `ug-Latn`, `ks-Deva`) is correctly ltr — matching ICU. Only
+ * when there is no script subtag does the base-language set decide.
+ */
+export function directionFromTagStatic(locale: string): Direction {
+  const parts = locale.toLowerCase().split(/[-_]/);
+  // Script subtags are 4 ASCII letters; 4-char BCP-47 variants start with a digit
+  // (e.g. `de-1901`), so the alpha-only guard keeps them from being read as scripts.
+  const script = parts.find((p) => /^[a-z]{4}$/.test(p));
+  if (script) return RTL_SCRIPTS.has(script) ? "rtl" : "ltr";
+  if (RTL_BASE_LANGS.has(parts[0])) return "rtl";
+  return "ltr";
+}
+
 export function localeDirection(locale: string): Direction {
   if (!locale || typeof locale !== "string") return "ltr";
 
@@ -71,10 +92,6 @@ export function localeDirection(locale: string): Direction {
     // Invalid tag or Intl Locale-Info unavailable — fall through to the static path.
   }
 
-  // 2) Static fallback: explicit RTL script subtag wins, else base language.
-  const parts = locale.toLowerCase().split(/[-_]/);
-  const script = parts.find((p) => p.length === 4);
-  if (script && RTL_SCRIPTS.has(script)) return "rtl";
-  if (RTL_BASE_LANGS.has(parts[0])) return "rtl";
-  return "ltr";
+  // 2) Static fallback (agrees with ICU for common tags → deterministic cross-runtime).
+  return directionFromTagStatic(locale);
 }
