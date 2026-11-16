@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useCallback } from "react";
 import { getLocaleInfo } from "../flags.js";
+import { localeDirection, type Direction } from "../direction.js";
 
 interface LanguagePanelProps {
   locales: string[];
@@ -7,6 +8,8 @@ interface LanguagePanelProps {
   onSelect: (locale: string) => void;
   position: "bottom-right" | "bottom-left" | "top-right" | "top-left";
   theme: "light" | "dark";
+  /** Writing direction of the active locale (mirrors the panel chrome for RTL). */
+  direction: Direction;
   showFlags: boolean;
   showBranding: boolean;
   /** id referenced by the trigger's aria-controls */
@@ -67,7 +70,14 @@ function LanguageOption({
           {flag}
         </span>
       )}
-      <span lang={locale} style={{ flex: 1, fontWeight: isActive ? 600 : 400 }}>
+      {/* Each endonym renders in its OWN language's direction, so a mixed-script
+          list ("English", "العربية", "עברית") is correct regardless of the panel's
+          overall direction. */}
+      <span
+        lang={locale}
+        dir={localeDirection(locale)}
+        style={{ flex: 1, fontWeight: isActive ? 600 : 400 }}
+      >
         {nativeName}
       </span>
       {isActive && (
@@ -88,6 +98,7 @@ export function LanguagePanel({
   onSelect,
   position,
   theme,
+  direction,
   showFlags,
   showBranding,
   listboxId,
@@ -141,6 +152,7 @@ export function LanguagePanel({
 
   return (
     <div
+      dir={direction}
       style={{
         ...panelPosition,
         width: 200,
@@ -158,6 +170,7 @@ export function LanguagePanel({
         id={listboxId}
         role="listbox"
         aria-label="Select language"
+        dir={direction}
         onKeyDown={handleKeyDown}
         style={{
           maxHeight: "min(280px, calc(100vh - 120px))",

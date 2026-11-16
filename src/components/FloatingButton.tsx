@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { getLocaleInfo } from "../flags.js";
+import type { Direction } from "../direction.js";
 
 interface FloatingButtonProps {
   currentLocale: string;
@@ -7,6 +8,8 @@ interface FloatingButtonProps {
   onClick: () => void;
   position: "bottom-right" | "bottom-left" | "top-right" | "top-left";
   theme: "light" | "dark";
+  /** Writing direction of the active locale (mirrors the chrome for RTL). */
+  direction: Direction;
   /** id of the listbox this button controls (aria-controls) */
   controlsId: string;
   buttonRef?: React.Ref<HTMLButtonElement>;
@@ -25,6 +28,7 @@ export function FloatingButton({
   onClick,
   position,
   theme,
+  direction,
   controlsId,
   buttonRef,
 }: FloatingButtonProps) {
@@ -41,6 +45,7 @@ export function FloatingButton({
     <button
       type="button"
       ref={buttonRef}
+      dir={direction}
       onClick={onClick}
       aria-label={`Switch language (current: ${name})`}
       aria-haspopup="listbox"
