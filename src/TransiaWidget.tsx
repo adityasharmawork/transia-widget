@@ -3,6 +3,7 @@ import { FloatingButton } from "./components/FloatingButton.js";
 import { LanguagePanel } from "./components/LanguagePanel.js";
 import { trackEvent } from "./analytics.js";
 import { sanitizeLocales, resolveActiveLocale } from "./locale.js";
+import { localeDirection } from "./direction.js";
 
 export interface TransiaWidgetProps {
   locales: string[];
@@ -125,6 +126,10 @@ export function TransiaWidget({
 
   if (locales.length < 2) return null;
 
+  // Direction of the *active* locale drives the widget chrome's mirroring.
+  // (Each option label gets its own direction inside LanguagePanel.)
+  const direction = localeDirection(activeLocale);
+
   return (
     <div ref={panelRef}>
       <FloatingButton
@@ -133,6 +138,7 @@ export function TransiaWidget({
         onClick={() => setIsOpen(!isOpen)}
         position={position}
         theme={resolvedTheme}
+        direction={direction}
         controlsId={listboxId}
         buttonRef={triggerRef}
       />
@@ -144,6 +150,7 @@ export function TransiaWidget({
           onSelect={handleSelect}
           position={position}
           theme={resolvedTheme}
+          direction={direction}
           showFlags={showFlags}
           showBranding={showBranding}
           listboxId={listboxId}
